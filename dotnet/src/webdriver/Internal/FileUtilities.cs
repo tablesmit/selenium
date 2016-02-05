@@ -168,8 +168,39 @@ namespace OpenQA.Selenium.Internal
                 Uri uri = new Uri(executingAssembly.CodeBase);
                 currentDirectory = Path.GetDirectoryName(uri.LocalPath);
             }
+            if (File.Exists(Path.Combine(currentDirectory, "webdriver.xpi")))
+            {
+                return currentDirectory;
+            }
+            else
+            {
+                // If it's not in the same directory as the executing assembly,
+                // try looking in the system path.
+                string systemPath = Environment.GetEnvironmentVariable("PATH");
+                if (!string.IsNullOrEmpty(systemPath))
+                {
+                    string expandedPath = Environment.ExpandEnvironmentVariables(systemPath);
+                    string[] directories = expandedPath.Split(Path.PathSeparator);
+                    foreach (string directory in directories)
+                    {
+                        // N.B., if the directory in the path contains an invalid character,
+                        // we will skip that directory, meaning no error will be thrown. This
+                        // may be confusing to the user, so we might want to revisit this.
+                        if (directory.IndexOfAny(Path.GetInvalidPathChars()) < 0)
+                        {
+                            if (File.Exists(Path.Combine(directory, "webdriver.xpi")))
+                            {
+                                currentDirectory = directory;
+                                return currentDirectory;
+                            }
+                        }
+                    }
+                }
+            }
 
-            return currentDirectory;
+            
+            
+            
         }
 
         /// <summary>
